@@ -30,12 +30,12 @@ export default function Login({ onSubmit }) {
         <div className="logo">
           <PlaneIcon />
         </div>
-        <h1>Telegram</h1>
+        <h1>Чат</h1>
         <p className="lead">
-          Чат для текстовых сообщений. idInstance и apiTokenInstance берутся в
+          Текстовые сообщения в Telegram через GREEN-API. idInstance и apiTokenInstance
           {' '}
-          <a href="https://console.green-api.com/" target="_blank" rel="noreferrer">кабинете GREEN-API</a>
-          , инстанс должен быть авторизован по QR.
+          — из <a href="https://console.green-api.com/" target="_blank" rel="noreferrer">кабинета</a>,
+          инстанс нужно авторизовать по QR.
         </p>
 
         <label className="field">

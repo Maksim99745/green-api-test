@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { formatListTime, stateLabel } from '../format'
 import { explainError } from '../errors'
-import { BackIcon, PencilIcon, SearchIcon } from '../icons'
+import { BackIcon } from '../icons'
 import Avatar from './Avatar'
 
 export default function Sidebar({
@@ -13,19 +13,10 @@ export default function Sidebar({
   onCreate,
   onLogout,
 }) {
-  const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
   const [phone, setPhone] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const needle = query.trim().toLowerCase()
-  const visible = chats.filter((chat) => {
-    if (!needle) return true
-    const digits = needle.replace(/\D/g, '')
-    return chat.title.toLowerCase().includes(needle)
-      || (digits && String(chat.phone || '').includes(digits))
-  })
 
   async function submitNew(event) {
     event.preventDefault()
@@ -50,30 +41,20 @@ export default function Sidebar({
             <BackIcon />
           </button>
         ) : (
-          <div className="search">
-            <SearchIcon />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Поиск"
-              aria-label="Поиск"
-            />
-          </div>
+          <h2 className="side-title">Чаты</h2>
         )}
-        {!creating && (
-          <button type="button" className="icon-btn" onClick={() => { setCreating(true); setError('') }} aria-label="Новый чат">
-            <PencilIcon />
+        {creating ? (
+          <h2 className="side-title">Новый чат</h2>
+        ) : (
+          <button type="button" className="text-btn" onClick={() => { setCreating(true); setError('') }}>
+            Новый чат
           </button>
         )}
-        {creating && <h2 className="side-title">Новый чат</h2>}
       </div>
 
       {creating ? (
         <form className="new-chat" onSubmit={submitNew}>
-          <p>
-            Номер в международном формате. Сначала найдём chatId через CheckAccount,
-            потом по нему пойдут сообщения.
-          </p>
+          <p>Номер телефона получателя, в международном формате.</p>
           <input
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
@@ -82,7 +63,6 @@ export default function Sidebar({
             autoFocus
             aria-label="Номер телефона"
           />
-          <small>Можно и @username, если номера нет.</small>
           {error && <p className="form-error">{error}</p>}
           <button className="primary" type="submit" disabled={loading || !phone.trim()}>
             {loading ? 'Ищу в Telegram...' : 'Создать чат'}
@@ -90,25 +70,17 @@ export default function Sidebar({
         </form>
       ) : (
         <div className="chat-list">
-          {visible.length === 0 && (
-            <p className="empty-list">
-              {chats.length === 0
-                ? 'Пока пусто. Нажмите карандаш и введите номер.'
-                : 'Ничего не нашлось.'}
-            </p>
+          {chats.length === 0 && (
+            <p className="empty-list">Пока пусто. Создайте чат по номеру телефона.</p>
           )}
-          {visible.map((chat) => {
+          {chats.map((chat) => {
             const last = chat.messages[chat.messages.length - 1]
             const preview = last ? `${last.out ? 'Вы: ' : ''}${last.text}` : 'Нет сообщений'
             return (
               <button
                 key={chat.id}
                 type="button"
-                className={[
-                  'chat-row',
-                  chat.id === activeId ? 'active' : '',
-                  chat.unread ? 'unread' : '',
-                ].filter(Boolean).join(' ')}
+                className={chat.id === activeId ? 'chat-row active' : 'chat-row'}
                 onClick={() => onSelect(chat.id)}
               >
                 <Avatar title={chat.title} seed={chat.id} />
@@ -119,7 +91,6 @@ export default function Sidebar({
                   </span>
                   <span className="chat-bottom">
                     <span className="chat-preview">{preview}</span>
-                    {chat.unread > 0 && <span className="badge">{chat.unread}</span>}
                   </span>
                 </span>
               </button>

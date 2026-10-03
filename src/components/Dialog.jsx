@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { dayLabel, formatClock, formatPhone } from '../format'
-import { BackIcon, CheckIcon, PlaneIcon } from '../icons'
+import { BackIcon, PlaneIcon } from '../icons'
 import Avatar from './Avatar'
 
-export default function Dialog({ chat, pollError, onSend, onRetry, onBack }) {
+export default function Dialog({ chat, pollError, onSend, onBack }) {
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
@@ -98,16 +98,7 @@ export default function Dialog({ chat, pollError, onSend, onRetry, onBack }) {
                 >
                   <span className="bubble-text">{message.text}</span>
                   <span className="meta">
-                    {message.status === 'failed' ? (
-                      <button type="button" className="retry" onClick={() => onRetry(message)}>
-                        повторить
-                      </button>
-                    ) : (
-                      <span>{formatClock(message.time)}</span>
-                    )}
-                    {message.out && message.status !== 'failed' && (
-                      <Status status={message.status} />
-                    )}
+                    {message.status === 'failed' ? 'не отправилось' : formatClock(message.time)}
                   </span>
                 </article>
               )
@@ -152,13 +143,6 @@ export default function Dialog({ chat, pollError, onSend, onRetry, onBack }) {
       </div>
     </section>
   )
-}
-
-function Status({ status }) {
-  if (status === 'pending') return <span className="clock" aria-label="отправляется" />
-  if (status === 'read') return <span className="status read" aria-label="прочитано"><CheckIcon double /></span>
-  if (status === 'delivered') return <span className="status" aria-label="доставлено"><CheckIcon double /></span>
-  return <span className="status" aria-label="отправлено"><CheckIcon /></span>
 }
 
 function groupByDay(messages) {

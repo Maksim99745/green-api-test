@@ -66,11 +66,7 @@ export function checkAccount(creds, payload) {
 export function sendMessage(creds, chatId, message) {
   return call(endpoint(creds, 'sendMessage'), {
     method: 'POST',
-    body: JSON.stringify({
-      chatId,
-      message,
-      typingTime: 1000,
-    }),
+    body: JSON.stringify({ chatId, message }),
   })
 }
 

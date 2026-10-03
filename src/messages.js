@@ -1,7 +1,5 @@
 import { formatPhone } from './format'
 
-const STATUS_RANK = { pending: 0, sent: 1, delivered: 2, read: 3 }
-
 function byRecent(a, b) {
   return b.updatedAt - a.updatedAt
 }
@@ -41,13 +39,8 @@ export function createChatRecord({ id, phone, title }) {
     phone: phone ? String(phone) : '',
     title: title || 'Без имени',
     messages: [],
-    unread: 0,
     updatedAt: Date.now(),
   }
-}
-
-export function markChatRead(chats, chatId) {
-  return chats.map((chat) => (chat.id === chatId ? { ...chat, unread: 0 } : chat))
 }
 
 export function appendOutgoing(chats, chatId, message) {
@@ -91,40 +84,6 @@ export function failOutgoing(chats, chatId, localId) {
   })
 }
 
-export function dropMessage(chats, chatId, messageId) {
-  return chats.map((chat) => {
-    if (chat.id !== chatId) return chat
-    return {
-      ...chat,
-      messages: chat.messages.filter((item) => item.id !== messageId),
-    }
-  })
-}
-
-function mergeStatus(prev, next) {
-  if (next === 'failed') return 'failed'
-  if ((STATUS_RANK[next] ?? -1) >= (STATUS_RANK[prev] ?? -1)) return next
-  return prev || next
-}
-
-function applyStatus(chats, body) {
-  const idMessage = String(body.idMessage || '')
-  const status = body.status
-  if (!idMessage || !status) return chats
-
-  const chatId = String(body.chatId || body.senderData?.chatId || '')
-  return chats.map((chat) => {
-    const hit = chat.id === chatId || chat.messages.some((item) => item.id === idMessage)
-    if (!hit) return chat
-    return {
-      ...chat,
-      messages: chat.messages.map((item) => (
-        item.id === idMessage ? { ...item, status: mergeStatus(item.status, status) } : item
-      )),
-    }
-  })
-}
-
 function blankChat(chatId, meta) {
   return createChatRecord({
     id: chatId,
@@ -133,13 +92,12 @@ function blankChat(chatId, meta) {
   })
 }
 
-function insertMessage(chats, chatId, message, activeId, meta) {
+function insertMessage(chats, chatId, message, meta) {
   const index = chats.findIndex((chat) => chat.id === chatId)
   if (index === -1) {
     const created = blankChat(chatId, meta)
     created.messages = [message]
     created.updatedAt = message.time
-    created.unread = message.out || chatId === activeId ? 0 : 1
     return [created, ...chats].sort(byRecent)
   }
 
@@ -166,13 +124,11 @@ function insertMessage(chats, chatId, message, activeId, meta) {
         title: pickTitle(chat.title, meta.title, meta.phone),
         phone: chat.phone || meta.phone || '',
         updatedAt: message.time,
-        unread: chatId === activeId ? 0 : chat.unread,
       }
       return next.sort(byRecent)
     }
   }
 
-  const open = chatId === activeId
   const next = chats.slice()
   next[index] = {
     ...chat,
@@ -180,18 +136,13 @@ function insertMessage(chats, chatId, message, activeId, meta) {
     title: pickTitle(chat.title, meta.title, meta.phone),
     phone: chat.phone || meta.phone || '',
     updatedAt: message.time,
-    unread: message.out || open ? (open ? 0 : chat.unread || 0) : (chat.unread || 0) + 1,
   }
   return next.sort(byRecent)
 }
 
-export function applyNotification(chats, notice, activeId) {
+export function applyNotification(chats, notice) {
   const body = notice?.body
   if (!body?.typeWebhook) return chats
-
-  if (body.typeWebhook === 'outgoingMessageStatus') {
-    return applyStatus(chats, body)
-  }
 
   if (body.typeWebhook !== 'incomingMessageReceived' && body.typeWebhook !== 'outgoingMessageReceived') {
     return chats
@@ -211,7 +162,7 @@ export function applyNotification(chats, notice, activeId) {
     out: outgoing,
     time: toMs(body.timestamp),
     status: outgoing ? 'sent' : undefined,
-  }, activeId, {
+  }, {
     title: sender.chatName || sender.senderName || sender.senderContactName || '',
     phone: sender.senderPhoneNumber ? String(sender.senderPhoneNumber) : '',
   })

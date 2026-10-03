@@ -12,9 +12,7 @@ import {
   appendOutgoing,
   applyNotification,
   createChatRecord,
-  dropMessage,
   failOutgoing,
-  markChatRead,
   settleOutgoing,
 } from './messages'
 import { normalizeRecipient, titleFromAccount } from './phone'
@@ -39,11 +37,6 @@ export default function App() {
     if (!creds) return
     saveChats(creds.idInstance, chats)
   }, [creds, chats])
-
-  useEffect(() => {
-    const unread = chats.reduce((sum, chat) => sum + (chat.unread || 0), 0)
-    document.title = unread ? `(${unread}) Telegram` : 'Telegram'
-  }, [chats])
 
   useEffect(() => {
     if (!creds) return undefined
@@ -72,7 +65,7 @@ export default function App() {
           if (stopped) return
           setPollError('')
           if (!notice?.receiptId) continue
-          setChats((prev) => applyNotification(prev, notice, activeIdRef.current))
+          setChats((prev) => applyNotification(prev, notice))
           try {
             await deleteNotification(creds, notice.receiptId)
           } catch {
@@ -143,7 +136,6 @@ export default function App() {
 
   function handleSelect(id) {
     setActiveId(id)
-    setChats((prev) => markChatRead(prev, id))
   }
 
   async function handleCreate(raw) {
@@ -199,17 +191,6 @@ export default function App() {
     }
   }
 
-  async function handleRetry(message) {
-    const chatId = activeIdRef.current
-    if (!chatId || !message) return
-    setChats((prev) => dropMessage(prev, chatId, message.id))
-    try {
-      await handleSend(message.text)
-    } catch {
-      // send сам пометит новое сообщение как неотправленное
-    }
-  }
-
   if (!creds) {
     return <Login onSubmit={handleLogin} />
   }
@@ -231,7 +212,6 @@ export default function App() {
         chat={activeChat}
         pollError={pollError}
         onSend={handleSend}
-        onRetry={handleRetry}
         onBack={() => setActiveId(null)}
       />
     </div>
