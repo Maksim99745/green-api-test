@@ -1,6 +1,6 @@
 const AVATAR_COLORS = ['#e17076', '#faa774', '#a695e7', '#7bc862', '#6ec9cb', '#65aadd', '#ee7aae']
 
-export function avatarColor(key) {
+export function avatarColor(key?: string) {
   const value = String(key || '?')
   let hash = 0
   for (let i = 0; i < value.length; i += 1) {
@@ -9,7 +9,7 @@ export function avatarColor(key) {
   return AVATAR_COLORS[hash]
 }
 
-export function formatPhone(value) {
+export function formatPhone(value?: string | number) {
   const digits = String(value || '').replace(/\D/g, '')
   if (!digits) return ''
   if (digits.length === 11 && digits.startsWith('7')) {
@@ -18,11 +18,11 @@ export function formatPhone(value) {
   return `+${digits}`
 }
 
-export function formatClock(ts) {
+export function formatClock(ts: number) {
   return new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
 
-export function formatListTime(ts) {
+export function formatListTime(ts?: number) {
   if (!ts) return ''
   const date = new Date(ts)
   const now = new Date()
@@ -30,7 +30,7 @@ export function formatListTime(ts) {
   return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 }
 
-export function dayLabel(ts) {
+export function dayLabel(ts: number) {
   const date = new Date(ts)
   const today = new Date()
   const yesterday = new Date()
@@ -40,13 +40,13 @@ export function dayLabel(ts) {
   return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
 }
 
-function sameDay(a, b) {
+function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear()
     && a.getMonth() === b.getMonth()
     && a.getDate() === b.getDate()
 }
 
-export function stateLabel(state) {
+export function stateLabel(state: string) {
   switch (state) {
     case 'authorized':
       return 'авторизован'
@@ -58,6 +58,8 @@ export function stateLabel(state) {
       return 'заблокирован'
     case 'sleepMode':
       return 'спит'
+    case 'yellowCard':
+      return 'ограничен'
     default:
       return state || ''
   }

@@ -1,21 +1,29 @@
-export function explainError(message) {
+export function errorText(err: unknown) {
+  return err instanceof Error ? err.message : ''
+}
+
+export function isRateLimit(err: unknown) {
+  return /429|too many requests|rate.?limit/i.test(errorText(err))
+}
+
+export function explainError(message?: string) {
   const text = String(message || '').trim()
   if (!text) return 'Не получилось выполнить запрос'
 
   if (/webhook/i.test(text)) {
     return 'В кабинете заполнен webhook URL. Очистите его и подождите около минуты, иначе входящие не приходят в чат.'
   }
-  if (/rate_limit_exceeded/i.test(text)) {
-    return 'Слишком много проверок номеров. Telegram просит подождать пару часов.'
+  if (/429|too many requests|rate.?limit/i.test(text)) {
+    return 'GREEN-API временно ограничил запросы. Подождите около минуты — профиль подтянется сам.'
   }
   if (/Rate limited by messenger/i.test(text)) {
-    return 'Telegram временно ограничил поиск контактов на этом аккаунте.'
+    return 'WhatsApp временно ограничил проверку номеров на этом аккаунте.'
   }
   if (/not authorized/i.test(text)) {
-    return 'Инстанс не авторизован. Отсканируйте QR в кабинете GREEN-API.'
+    return 'Инстанс не авторизован. Отсканируйте QR в WhatsApp через кабинет GREEN-API.'
   }
   if (/temporarily unavailable/i.test(text)) {
-    return 'Сервера Telegram сейчас не отвечают. Попробуйте через минуту.'
+    return 'Сервера WhatsApp сейчас не отвечают. Попробуйте через минуту.'
   }
   if (/instance is starting/i.test(text)) {
     return 'Инстанс ещё запускается. Подождите минуту и повторите.'

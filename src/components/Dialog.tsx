@@ -1,14 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
-import { dayLabel, formatClock, formatPhone } from '../format'
-import { BackIcon, PlaneIcon } from '../icons'
+import type { Chat, ChatMessage } from '../types'
+import { dayLabel, formatClock, formatPhone } from '../format/display'
+import { errorText } from '../errors'
+import { BackIcon, LogoIcon, SendIcon } from './icons'
 import Avatar from './Avatar'
 
-export default function Dialog({ chat, pollError, onSend, onBack }) {
+interface DialogProps {
+  chat: Chat | null
+  pollError: string
+  onSend: (text: string) => Promise<void>
+  onBack: () => void
+}
+
+export default function Dialog({ chat, pollError, onSend, onBack }: DialogProps) {
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
-  const endRef = useRef(null)
-  const inputRef = useRef(null)
+  const endRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setText('')
@@ -20,7 +29,7 @@ export default function Dialog({ chat, pollError, onSend, onBack }) {
     endRef.current?.scrollIntoView({ block: 'end' })
   }, [chat?.id, chat?.messages.length])
 
-  function resize(element) {
+  function resize(element: HTMLTextAreaElement) {
     element.style.height = 'auto'
     element.style.height = `${Math.min(element.scrollHeight, 160)}px`
   }
@@ -37,7 +46,7 @@ export default function Dialog({ chat, pollError, onSend, onBack }) {
     try {
       await onSend(value)
     } catch (err) {
-      setError(err.message || 'Не отправилось')
+      setError(errorText(err) || 'Не отправилось')
     } finally {
       setSending(false)
       inputRef.current?.focus()
@@ -50,7 +59,7 @@ export default function Dialog({ chat, pollError, onSend, onBack }) {
         {pollError && <div className="banner">{pollError}</div>}
         <div className="placeholder">
           <div className="logo">
-            <PlaneIcon />
+            <LogoIcon />
           </div>
           <p>Выберите чат слева или создайте новый по номеру телефона.</p>
         </div>
@@ -110,43 +119,43 @@ export default function Dialog({ chat, pollError, onSend, onBack }) {
 
       <div className="composer-wrap">
         {error && <p className="composer-error">{error}</p>}
-      <form
-        className="composer"
-        onSubmit={(event) => {
-          event.preventDefault()
-          submit()
-        }}
-      >
-        <textarea
-          ref={inputRef}
-          rows={1}
-          value={text}
-          maxLength={4096}
-          placeholder="Сообщение"
-          aria-label="Сообщение"
-          onChange={(event) => {
-            setText(event.target.value)
-            setError('')
-            resize(event.target)
+        <form
+          className="composer"
+          onSubmit={(event) => {
+            event.preventDefault()
+            submit()
           }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault()
-              submit()
-            }
-          }}
-        />
-        <button className="send" type="submit" disabled={!text.trim() || sending} aria-label="Отправить">
-          <PlaneIcon />
-        </button>
-      </form>
+        >
+          <textarea
+            ref={inputRef}
+            rows={1}
+            value={text}
+            maxLength={20000}
+            placeholder="Сообщение"
+            aria-label="Сообщение"
+            onChange={(event) => {
+              setText(event.target.value)
+              setError('')
+              resize(event.target)
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault()
+                submit()
+              }
+            }}
+          />
+          <button className="send" type="submit" disabled={!text.trim() || sending} aria-label="Отправить">
+            <SendIcon />
+          </button>
+        </form>
       </div>
     </section>
   )
 }
 
-function groupByDay(messages) {
-  const groups = []
+function groupByDay(messages: ChatMessage[]) {
+  const groups: { label: string; items: ChatMessage[] }[] = []
   messages.forEach((message) => {
     const label = dayLabel(message.time)
     const last = groups[groups.length - 1]

@@ -1,12 +1,18 @@
-import { useEffect, useState } from 'react'
-import { DEFAULT_API_URL } from '../api'
-import { explainError } from '../errors'
-import { PlaneIcon } from '../icons'
+import { useEffect, useState, type ReactNode } from 'react'
+import { DEFAULT_API_URL } from '../api/client'
+import { errorText, explainError } from '../errors'
+import { LogoIcon } from './icons'
 
-const STEPS = [
+const STEPS: { title: string; text: ReactNode }[] = [
   {
     title: 'Создайте инстанс',
-    text: 'В кабинете GREEN-API создайте инстанс Telegram и авторизуйте его QR-кодом из приложения. Поле Webhook URL оставьте пустым, иначе ответы не попадут в этот чат.',
+    text: (
+      <>
+        В{' '}
+        <a href="https://console.green-api.com/" target="_blank" rel="noreferrer">кабинете GREEN-API</a>
+        {' '}создайте инстанс WhatsApp и авторизуйте его QR-кодом в приложении: Настройки → Связанные устройства. Поле Webhook URL оставьте пустым, иначе ответы не попадут в этот чат.
+      </>
+    ),
   },
   {
     title: 'Скопируйте данные',
@@ -22,11 +28,21 @@ const STEPS = [
   },
   {
     title: 'Напишите сообщение',
-    text: 'Отправьте текст. Когда собеседник ответит в Telegram, сообщение появится в этом чате. В ленте показываются только текстовые сообщения.',
+    text: 'Отправьте текст. Когда собеседник ответит в WhatsApp, сообщение появится в этом чате. В ленте показываются только текстовые сообщения.',
   },
 ]
 
-export default function Login({ onSubmit }) {
+interface LoginForm {
+  idInstance: string
+  apiTokenInstance: string
+  apiUrl: string
+}
+
+interface LoginProps {
+  onSubmit: (form: LoginForm) => Promise<void>
+}
+
+export default function Login({ onSubmit }: LoginProps) {
   const [idInstance, setIdInstance] = useState('')
   const [apiTokenInstance, setApiTokenInstance] = useState('')
   const [apiUrl, setApiUrl] = useState(DEFAULT_API_URL)
@@ -37,21 +53,21 @@ export default function Login({ onSubmit }) {
 
   useEffect(() => {
     if (!guideOpen) return undefined
-    function onKey(event) {
+    function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') setGuideOpen(false)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [guideOpen])
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError('')
     setLoading(true)
     try {
       await onSubmit({ idInstance, apiTokenInstance, apiUrl })
     } catch (err) {
-      setError(explainError(err.message))
+      setError(explainError(errorText(err)))
     } finally {
       setLoading(false)
     }
@@ -61,11 +77,11 @@ export default function Login({ onSubmit }) {
     <div className="login">
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="logo">
-          <PlaneIcon />
+          <LogoIcon />
         </div>
         <h1>Чат</h1>
         <p className="lead">
-          Текстовые сообщения в Telegram через GREEN-API.
+          Текстовые сообщения в WhatsApp через GREEN-API.
         </p>
         <button type="button" className="guide-open" onClick={() => setGuideOpen(true)}>
           Как запустить

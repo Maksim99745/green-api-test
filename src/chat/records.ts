@@ -1,19 +1,21 @@
-import { formatPhone } from './format'
+import type { Chat, ChatMessage, IncomingNotice } from '../types'
+import { formatPhone } from '../format/display'
+import { phoneDigits } from './phone'
 
-function byRecent(a, b) {
+function byRecent(a: Chat, b: Chat) {
   return b.updatedAt - a.updatedAt
 }
 
-function toMs(ts) {
+function toMs(ts?: number) {
   if (!ts) return Date.now()
   return ts < 1e12 ? ts * 1000 : ts
 }
 
-function isPhoneLike(value) {
+function isPhoneLike(value: string) {
   return /^\+?[\d\s()-]+$/.test(value || '')
 }
 
-function pickTitle(current, incoming, phone) {
+function pickTitle(current: string, incoming: string, phone: string) {
   const name = String(incoming || '').trim()
   if (name && !isPhoneLike(name) && !name.startsWith('@')) return name
   if (current && !isPhoneLike(current)) return current
@@ -23,7 +25,7 @@ function pickTitle(current, incoming, phone) {
   return 'Без имени'
 }
 
-function readText(body) {
+function readText(body: NonNullable<IncomingNotice['body']>) {
   const data = body.messageData
   if (!data) return ''
   if (data.typeMessage === 'textMessage') return data.textMessageData?.textMessage || ''
@@ -33,7 +35,7 @@ function readText(body) {
   return ''
 }
 
-export function createChatRecord({ id, phone, title }) {
+export function createChatRecord({ id, phone, title }: { id: string; phone?: string; title?: string }): Chat {
   return {
     id: String(id),
     phone: phone ? String(phone) : '',
@@ -43,7 +45,7 @@ export function createChatRecord({ id, phone, title }) {
   }
 }
 
-export function appendOutgoing(chats, chatId, message) {
+export function appendOutgoing(chats: Chat[], chatId: string, message: ChatMessage) {
   return chats
     .map((chat) => {
       if (chat.id !== chatId) return chat
@@ -56,7 +58,7 @@ export function appendOutgoing(chats, chatId, message) {
     .sort(byRecent)
 }
 
-export function settleOutgoing(chats, chatId, localId, serverId) {
+export function settleOutgoing(chats: Chat[], chatId: string, localId: string, serverId: string) {
   return chats.map((chat) => {
     if (chat.id !== chatId) return chat
     const alreadyThere = chat.messages.some((item) => item.id === serverId)
@@ -65,26 +67,26 @@ export function settleOutgoing(chats, chatId, localId, serverId) {
       messages: chat.messages.flatMap((item) => {
         if (item.id !== localId) return [item]
         if (alreadyThere) return []
-        return [{ ...item, id: serverId, status: 'sent' }]
+        return [{ ...item, id: serverId, status: 'sent' as const }]
       }),
       updatedAt: Date.now(),
     }
   })
 }
 
-export function failOutgoing(chats, chatId, localId) {
+export function failOutgoing(chats: Chat[], chatId: string, localId: string) {
   return chats.map((chat) => {
     if (chat.id !== chatId) return chat
     return {
       ...chat,
       messages: chat.messages.map((item) => (
-        item.id === localId ? { ...item, status: 'failed' } : item
+        item.id === localId ? { ...item, status: 'failed' as const } : item
       )),
     }
   })
 }
 
-function blankChat(chatId, meta) {
+function blankChat(chatId: string, meta: { phone: string; title: string }) {
   return createChatRecord({
     id: chatId,
     phone: meta.phone || '',
@@ -92,7 +94,7 @@ function blankChat(chatId, meta) {
   })
 }
 
-function insertMessage(chats, chatId, message, meta) {
+function insertMessage(chats: Chat[], chatId: string, message: ChatMessage, meta: { phone: string; title: string }) {
   const index = chats.findIndex((chat) => chat.id === chatId)
   if (index === -1) {
     const created = blankChat(chatId, meta)
@@ -140,7 +142,7 @@ function insertMessage(chats, chatId, message, meta) {
   return next.sort(byRecent)
 }
 
-export function applyNotification(chats, notice) {
+export function applyNotification(chats: Chat[], notice: IncomingNotice | null) {
   const body = notice?.body
   if (!body?.typeWebhook) return chats
 
@@ -152,18 +154,23 @@ export function applyNotification(chats, notice) {
   if (!text) return chats
 
   const sender = body.senderData || {}
-  const chatId = String(sender.chatId || sender.sender || '')
-  if (!chatId) return chats
+  const rawId = String(sender.chatId || sender.sender || '')
+  if (!rawId) return chats
+
+  const phone = phoneDigits(sender.senderPhoneNumber) || phoneDigits(rawId) || phoneDigits(sender.sender)
+  const known = chats.find((chat) => chat.id === rawId)
+    || (phone ? chats.find((item) => item.phone === phone) : undefined)
+  const chatId = known ? known.id : rawId
 
   const outgoing = body.typeWebhook === 'outgoingMessageReceived'
   return insertMessage(chats, chatId, {
-    id: String(body.idMessage || notice.receiptId),
+    id: String(body.idMessage || notice?.receiptId),
     text,
     out: outgoing,
     time: toMs(body.timestamp),
     status: outgoing ? 'sent' : undefined,
   }, {
     title: sender.chatName || sender.senderName || sender.senderContactName || '',
-    phone: sender.senderPhoneNumber ? String(sender.senderPhoneNumber) : '',
+    phone,
   })
 }
