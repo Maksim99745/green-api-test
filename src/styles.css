@@ -503,6 +503,113 @@ button, input, textarea { font-family: inherit; }
 
 .lead a { color: #3390ec; }
 
+.guide-open {
+  display: block;
+  margin: 10px auto 0;
+  border: 0;
+  background: none;
+  color: #3390ec;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.guide-open:hover { text-decoration: underline; }
+
+.guide-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(16, 35, 54, 0.35);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.guide {
+  width: min(420px, 100%);
+  height: 100%;
+  background: #fff;
+  box-shadow: -8px 0 28px rgba(16, 35, 54, 0.16);
+  padding: 20px 22px 28px;
+  overflow: auto;
+}
+
+.guide-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.guide-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.guide-close {
+  border: 0;
+  background: #f1f3f4;
+  color: #222;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.guide-close:hover { background: #e6e8ea; }
+
+.guide-steps {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guide-steps li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.guide-num {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: #e4f2fc;
+  color: #3390ec;
+  font-size: 14px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.guide-steps strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.guide-steps p {
+  margin: 0;
+  color: #4b5560;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.guide-note {
+  margin: 22px 0 0;
+  color: #707579;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.guide-note a { color: #3390ec; }
+
 .field {
   display: flex;
   flex-direction: column;
