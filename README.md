@@ -29,3 +29,4 @@ npm run dev
 - Входящие: [ReceiveNotification](https://green-api.com/telegram/docs/api/receiving/technology-http-api/ReceiveNotification/) и сразу [DeleteNotification](https://green-api.com/telegram/docs/api/receiving/technology-http-api/DeleteNotification/)
 
 В ленту попадают только текстовые сообщения. Остальные уведомления из очереди снимаются и не показываются.
+# green-api-test
